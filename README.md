@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ahelhot/moredraw.svg?branch=master)](https://travis-ci.org/ahelhot/moredraw)
+
 # MoreDraw
 Smart handlebars template with two-side render (php/js) with just one template and reactive data update.
 Based on zordius/lightncandy && handlebars parser
