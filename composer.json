@@ -1,0 +1,24 @@
+{
+    "name": "ahelhot/moredraw",
+    "description": "Handlebars two-side wrapper (js/php) - Same template anywhere with reactive update",
+    "homepage": "https://github.com/ahelhot/moredraw",
+    "keywords": ["handlebars", "PHP", "template", "logicless", "JS"],
+    "type": "template",
+    "require": {
+        "php": ">=7",
+        "zordius/lightncandy": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "NeoHandlebars\\": "lib.php"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "HC",
+            "email": "fe3dback@yandex.ru"
+        }
+    ],
+    "minimum-stability": "dev"
+}

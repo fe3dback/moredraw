@@ -1,0 +1,507 @@
+<?php
+
+namespace NeoHandlebars;
+
+/*
+ * Handlebars template engine
+ * @author: K.Perov <fe3dback@yandex.ru>
+ *
+ * Based on original handlebars parser:
+ * https://github.com/zordius/lightncandy
+ *
+ * @requirements:
+ * - "zordius/lightncandy": "dev-master"
+ * - php v7
+ *
+ * With unit tests
+ */
+
+use Exception;
+use LightnCandy\LightnCandy;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+class MoreDraw
+{
+	private $useMemCache = true;
+	private $memCached = [];
+	private $partials = [];
+
+	// this store all data provided to templates
+	private $templateDataCache = [];
+
+	const TEMPLATE_DIR = __DIR__ . '/templates';
+	const TEMPLATE_EXT = 'hbs';
+	const CACHE_DIR = __DIR__ . '/cache';
+	const CACHE_MAP_FILE = __DIR__ . '/cache-map.json';
+
+
+	/**
+	 * Add template to global partials array
+	 * all partial can be used from any other templates
+	 * like this: {{> name}}
+	 *
+	 * This template get all data from parent
+	 *
+	 * @param $name - template name
+	 *
+	 * @return bool - true if success, false if partial already added.
+	 * @throws Exception
+	 */
+	public function addPartial($name)
+	{
+		$name = $name ?: false;
+
+		if (!$name)
+		{
+			throw new Exception("Can't add partial without name");
+		}
+
+		$partial = $this->getTemplate($name);
+		if (!in_array($name, array_keys($this->partials)))
+		{
+			$this->partials[$name] = $partial;
+			asort($this->partials);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Add all templates in folder $folderName
+	 * to global partials array
+	 *
+	 * @param $folderName
+	 *
+	 * @throws Exception
+	 */
+	public function addManyPartials($folderName)
+	{
+		$folderName = $folderName ?: false;
+
+		if (!$folderName)
+		{
+			throw new Exception("Can't add partials without folder name");
+		}
+
+		$fullPath = self::TEMPLATE_DIR . "/{$folderName}";
+		if (!is_dir($fullPath))
+		{
+			throw new Exception("Can't add partials in {$folderName}, folder {$fullPath} not exist.");
+		}
+
+		// get current version
+		$iterator = new RecursiveIteratorIterator
+		(
+			new RecursiveDirectoryIterator($fullPath, RecursiveDirectoryIterator::SKIP_DOTS),
+			RecursiveIteratorIterator::SELF_FIRST,
+			RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+		);
+
+		foreach ($iterator as $path => $dir)
+		{
+			if ($dir->isFile())
+			{
+				$name = str_replace(self::TEMPLATE_DIR . '/', '', $path);
+				$name = str_replace('.'.self::TEMPLATE_EXT, '', $name);
+				$this->addPartial($name);
+			}
+		}
+	}
+
+	/**
+	 * Remove template from global partials array
+	 *
+	 * @param $name - template name
+	 *
+	 * @return bool - true if success, false if partial already removed.
+	 */
+	public function removePartial($name)
+	{
+		if (in_array($name, array_keys($this->partials)))
+		{
+			unset($this->partials[$name]);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Remove all partials
+	 */
+	public function clearPartials()
+	{
+		$partials = $this->getPartials();
+		foreach ($partials as $name => $data)
+		{
+			$this->removePartial($name);
+		}
+	}
+
+	/**
+	 * Return array of partials
+	 * [name] => template raw string
+	 *
+	 * @return array
+	 */
+	public function getPartials()
+	{
+		return $this->partials;
+	}
+
+	/**
+	 * Render template with data
+	 * and return back html string
+	 *
+	 * @param       $name - template name
+	 * @param array $data - any data (if data have _index key, all provided array will be exported to js)
+	 * @param bool  $useCache - DO NOT TURN OFF CACHE
+	 *
+	 * @return string - html output
+	 * @throws Exception
+	 */
+    public function render($name, $data = [], $useCache = true)
+    {
+	    $compileSettings = [
+		    'flags' => LightnCandy::FLAG_HANDLEBARSJS,
+		    'partials' => $this->partials
+	    ];
+
+	    $name = $name ?: false;
+	    $data = $data ?: [];
+	    $useCache = $useCache ?: true;
+
+	    if (!$name)
+	    {
+		    throw new Exception("Can't render handlebars template. Template name empty");
+	    }
+	    
+	    $renderer = false;
+
+        // check cache
+	    if ($useCache)
+	    {
+		    if ($this->useMemCache)
+		    {
+			    if (in_array($name, array_keys($this->memCached)))
+			    {
+				    $renderer = $this->memCached[$name];
+			    }
+		    }
+
+		    if (!$renderer)
+		    {
+			    $cached = self::CACHE_DIR . "/{$name}.php";
+
+			    if (!is_file($cached))
+			    {
+				    // @codeCoverageIgnoreStart
+
+				    $path = pathinfo($cached);
+				    $fullDirPath = $path['dirname'];
+
+				    if (!is_dir($fullDirPath))
+				    {
+					    $dirExist = mkdir($fullDirPath, 0777, true);
+					    if (!$dirExist)
+					    {
+						    throw new Exception("Can't create dir '{$fullDirPath}' to save template cache");
+					    }
+				    }
+
+				    $template = $this->getTemplate($name);
+
+				    try
+				    {
+					    $phpize = LightnCandy::compile($template, $compileSettings);
+				    }
+				    catch (Exception $e)
+				    {
+					    throw new Exception("Can't render handlebars template. Internal Error");
+				    }
+
+				    $status = file_put_contents($cached, "<?php \n".$phpize."\n?>");
+				    if (!$status)
+				    {
+					    throw new Exception("Can't save template '{$name}' cache to '{$cached}' file");
+				    }
+
+				    // @codeCoverageIgnoreEnd
+			    }
+
+			    $renderer = include($cached);
+
+			    if ($this->useMemCache)
+			    {
+				    $this->memCached[$name] = $renderer;
+			    }
+		    }
+	    }
+	    else
+	    {
+		    // @codeCoverageIgnoreStart
+		    try
+		    {
+			    $template = $this->getTemplate($name);
+			    $phpize = LightnCandy::compile($template, $compileSettings);
+			    $renderer = eval($phpize);
+		    }
+		    catch (Exception $e)
+		    {
+			    throw new Exception("Can't render handlebars template. Internal Error");
+		    }
+		    // @codeCoverageIgnoreEnd
+	    }
+
+	    // @codeCoverageIgnoreStart
+		if (!$renderer)
+		{
+			throw new Exception("Can't render handlebars template. Renderer not set");
+		}
+	    // @codeCoverageIgnoreEnd
+
+	    if (isset($data['_index']))
+	    {
+		    $this->templateDataCache[$name][$data['_index']] = $data;
+	    }
+
+        return $renderer($data);
+    }
+
+    /**
+     * Return template string, usable in  latest js render
+     * on frontend
+     *
+     * @param $name - template name
+     * @return string - raw template string
+     * @throws Exception
+     */
+    public function getTemplate($name)
+    {
+        $raw = self::TEMPLATE_DIR . "/{$name}." . self::TEMPLATE_EXT;
+        if (is_file($raw))
+        {
+            return file_get_contents($raw);
+        }
+
+        Throw new Exception("Can't get handlebars template {$name} at {$raw}. File not found");
+    }
+
+    /**
+     * Return raw template string wrapped with script tag (for js use)
+     * In js:   let s = $("#{name}").html();    // get template raw string
+     *          let o = Handlebars.compile(s);
+     *
+     * @param $name - template name
+     * @return string
+     */
+    public function getJSWrapper($name)
+    {
+        $template = $this->getTemplate($name);
+        $output = trim(str_replace(["\n", "\t", "\r"], "", $template));
+	    $jsId = str_replace("/", "__", $name);
+        return <<<HTML
+<script id="hb-{$jsId}" type="text/x-handlebars-template">{$output}</script>
+HTML;
+
+    }
+
+	/**
+	 * Get all raw template strings,
+	 * and wrap each by "x-handlebars-template" tag.
+	 *
+	 * @return string
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public function getAllJSTemplates()
+	{
+		$resultData = "";
+
+		$iterator = new RecursiveIteratorIterator
+		(
+			new RecursiveDirectoryIterator(self::TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+			RecursiveIteratorIterator::SELF_FIRST,
+			RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+		);
+
+		foreach ($iterator as $path => $dir)
+		{
+			if ($dir->isFile())
+			{
+				$name = str_replace(self::TEMPLATE_DIR . '/', '', $path);
+				$name = str_replace('.'.self::TEMPLATE_EXT, '', $name);
+				$resultData .= $this->getJSWrapper($name);
+			}
+		}
+
+		$templatesData = json_encode($this->getTemplateDataCache(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$partialsData = json_encode($this->getPartials());
+
+		$resultData .= <<<HTML
+<script type="text/javascript">
+	__handlebars_server_partials = {$partialsData};
+</script> 
+HTML;
+
+		$resultData .= <<<HTML
+<script type="text/javascript">
+	__handlebars_server_data = {$templatesData}
+</script>
+HTML;
+
+		return $resultData;
+	}
+
+	/**
+	 * Return all given templates data (with indexes)
+	 *
+	 * @return array
+	 */
+	public function getTemplateDataCache()
+	{
+		return $this->templateDataCache;
+	}
+
+	/**
+	 * Must be run before any other functions
+	 * each time when application start
+	 * (ex in /local/php_interface/init.php)
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public function init()
+	{
+		if (!is_dir(self::TEMPLATE_DIR))
+		{
+			if (!mkdir(self::TEMPLATE_DIR))
+			{
+				throw new Exception("Can't create template dir for handlebars '".self::TEMPLATE_DIR."'");
+			};
+		}
+		if (!is_dir(self::CACHE_DIR))
+		{
+			if (!mkdir(self::CACHE_DIR))
+			{
+				throw new Exception("Can't create cache dir for handlebars '".self::CACHE_DIR."'");
+			};
+		}
+
+		$this->clearOldCache();
+	}
+
+	/**
+	 * Allow use memCache.
+	 * This increase performance to many times when render used in loops
+	 *
+	 * Default is ON
+	 *
+	 * @param bool $bool - allow y/n
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public function useMemCache($bool = false)
+	{
+		$bool = !!$bool;
+		$this->useMemCache = $bool;
+	}
+
+    // ==============================================================
+
+	/**
+	 * Drop old cache. At next run, new cache will be build.
+	 * @codeCoverageIgnore
+	 */
+    private function clearOldCache()
+    {
+        $map = [];
+
+        // last edit version
+        $cache = [];
+
+        if (is_file(self::CACHE_MAP_FILE))
+        {
+            $cache = json_decode(file_get_contents(self::CACHE_MAP_FILE), true);
+        }
+
+        // get current version
+	    $iterator = new RecursiveIteratorIterator
+	    (
+		    new RecursiveDirectoryIterator(self::TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+		    RecursiveIteratorIterator::SELF_FIRST,
+		    RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+	    );
+
+	    $files = array();
+	    foreach ($iterator as $path => $dir)
+	    {
+		    if ($dir->isFile())
+		    {
+			    $files[] = str_replace(self::TEMPLATE_DIR . '/', '', $path);
+		    }
+	    }
+
+	    $allowDropCache = false;
+
+        if (count($files) >= 1)
+        {
+            // test file version and remove old cache
+            while ($f = array_shift($files))
+            {
+                if (in_array($f, [".", ".."]))
+                {
+                    continue;
+                }
+
+                $path_template = self::TEMPLATE_DIR . "/{$f}";
+                $name = str_replace('.'.self::TEMPLATE_EXT, '', $f);
+
+                $path_cache = self::CACHE_DIR . "/{$name}.php";
+
+                if (file_exists($path_template))
+                {
+                    clearstatcache(true, $path_template);
+                    $lastEdit = filemtime($path_template);
+
+                    // compare with oldMap
+                    if (isset($cache[$name]))
+                    {
+                        $cacheEdit = $cache[$name];
+                        if ($cacheEdit < $lastEdit)
+                        {
+                            // remove old cache files
+                            unlink($path_cache);
+	                        $allowDropCache = true;
+                        }
+                    }
+
+                    $map[$name] = $lastEdit;
+                }
+            }
+        }
+
+	    if ($allowDropCache)
+	    {
+		    $files = new RecursiveIteratorIterator(
+			    new RecursiveDirectoryIterator(self::CACHE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+			    RecursiveIteratorIterator::CHILD_FIRST
+		    );
+
+		    foreach ($files as $fileinfo)
+		    {
+			    $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+			    $todo($fileinfo->getRealPath());
+		    }
+
+		    rmdir(self::CACHE_DIR);
+	    }
+
+        file_put_contents(self::CACHE_MAP_FILE, json_encode($map, JSON_PRETTY_PRINT));
+    }
+}
+
+
+
+

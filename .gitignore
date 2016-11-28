@@ -1,0 +1,7 @@
+cache/
+build/
+cache-map.json
+
+/vendor/
+.idea/
+composer.lock

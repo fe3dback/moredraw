@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit 
+    backupGlobals="false"
+    colors="true"
+    convertNoticesToExceptions="false"
+    bootstrap="./vendor/autoload.php"
+>
+    <filter>
+        <blacklist>
+            <directory>vendor</directory>
+            <directory>tests</directory>
+        </blacklist>
+        <whitelist>
+            <directory suffix=".php">./lib.php</directory>
+        </whitelist>
+    </filter>
+
+    <logging>
+        <log type="coverage-html" target="build/coverage" title="neoHandlebars" charset="UTF-8" />
+        <log type="coverage-text" target="php://stdout" />
+    </logging>
+
+    <testsuites>
+        <testsuite name="neoHandlebars Test Suite">
+            <directory>./tests/libTest.php</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
