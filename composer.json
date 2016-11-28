@@ -1,9 +1,15 @@
 {
     "name": "ahelhot/moredraw",
     "description": "Handlebars two-side wrapper (js/php) - Same template anywhere with reactive update",
-    "homepage": "https://github.com/ahelhot/moredraw",
+    "repositories": [
+      {
+        "type": "git",
+        "url": "https://github.com/ahelhot/moredraw"
+      }
+    ],
     "keywords": ["handlebars", "PHP", "template", "logicless", "JS"],
     "type": "template",
+    "version": "0.5.0",
     "require": {
         "php": ">=7",
         "zordius/lightncandy": "dev-master"
