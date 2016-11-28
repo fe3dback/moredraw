@@ -29,31 +29,32 @@
 			$this->lib = new MoreDraw();
 			$this->lib->init();
 
-			$this->testFilePath = MoreDraw::TEMPLATE_DIR . "/" . $this->testFileName . "." . MoreDraw::TEMPLATE_EXT;
-			$this->testPartialsPath = MoreDraw::TEMPLATE_DIR . "/" . $this->testPartialsDirName;
+			$this->testFilePath = $this->lib->_getTemplateDir() . "/" . $this->testFileName . "." . $this->lib->_getTemplateExtension();
+			$this->testPartialsPath = $this->lib->_getTemplateDir() . "/" . $this->testPartialsDirName;
 
 			// make test file
 			$this->makeTestFile();
 			$this->makeTestPartials();
 
 			// clear cache
-			if (is_file(MoreDraw::CACHE_MAP_FILE))
+			if (is_file($this->lib->_getCacheMapFile()))
 			{
-				unlink(MoreDraw::CACHE_MAP_FILE);
+				unlink($this->lib->_getCacheMapFile());
 			}
 		}
 
 		protected function tearDown()
 		{
-			$this->lib = null;
 			$this->removeTestFile();
 			$this->removeTestPartials();
-
+			
 			// clear cache
-			if (is_file(MoreDraw::CACHE_MAP_FILE))
+			if (is_file($this->lib->_getCacheMapFile()))
 			{
-				unlink(MoreDraw::CACHE_MAP_FILE);
+				unlink($this->lib->_getCacheMapFile());
 			}
+
+			$this->lib = null;
 		}
 
 		/**
@@ -324,7 +325,7 @@
 			}
 			for($i=1; $i<=$this->testPartialsCount; $i++)
 			{
-				file_put_contents($this->testPartialsPath . "/" . $this->testFileName . $i . "." . MoreDraw::TEMPLATE_EXT, "partial {$i}");
+				file_put_contents($this->testPartialsPath . "/" . $this->testFileName . $i . "." . $this->lib->_getTemplateExtension(), "partial {$i}");
 			}
 		}
 
@@ -332,7 +333,7 @@
 		{
 			for($i=1; $i<=$this->testPartialsCount; $i++)
 			{
-				$path = $this->testPartialsPath . "/" . $this->testFileName . $i . "." . MoreDraw::TEMPLATE_EXT;
+				$path = $this->testPartialsPath . "/" . $this->testFileName . $i . "." . $this->lib->_getTemplateExtension();
 
 				if (is_file($path))
 				{

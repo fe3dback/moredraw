@@ -7,11 +7,11 @@
 >
     <filter>
         <blacklist>
-            <directory>vendor</directory>
-            <directory>tests</directory>
+            <directory>./vendor</directory>
+            <directory>./tests</directory>
         </blacklist>
         <whitelist>
-            <directory suffix=".php">./lib.php</directory>
+            <directory suffix=".php">./src/MoreDraw.php</directory>
         </whitelist>
     </filter>
 

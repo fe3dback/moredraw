@@ -33,7 +33,11 @@ class MoreDraw
 	const TEMPLATE_DIR = __DIR__ . '/templates';
 	const TEMPLATE_EXT = 'hbs';
 	const CACHE_DIR = __DIR__ . '/cache';
-	const CACHE_MAP_FILE = __DIR__ . '/cache-map.json';
+
+	private $p_TEMPLATE_DIR = self::TEMPLATE_DIR;
+	private $p_TEMPLATE_EXT = self::TEMPLATE_EXT;
+	private $p_CACHE_DIR = self::CACHE_DIR;
+	private $p_CACHE_MAP_FILE = self::CACHE_DIR . "/map.json";
 
 
 	/**
@@ -85,7 +89,7 @@ class MoreDraw
 			throw new Exception("Can't add partials without folder name");
 		}
 
-		$fullPath = self::TEMPLATE_DIR . "/{$folderName}";
+		$fullPath = $this->p_TEMPLATE_DIR . "/{$folderName}";
 		if (!is_dir($fullPath))
 		{
 			throw new Exception("Can't add partials in {$folderName}, folder {$fullPath} not exist.");
@@ -103,8 +107,8 @@ class MoreDraw
 		{
 			if ($dir->isFile())
 			{
-				$name = str_replace(self::TEMPLATE_DIR . '/', '', $path);
-				$name = str_replace('.'.self::TEMPLATE_EXT, '', $name);
+				$name = str_replace($this->p_TEMPLATE_DIR . '/', '', $path);
+				$name = str_replace('.'.$this->p_TEMPLATE_EXT, '', $name);
 				$this->addPartial($name);
 			}
 		}
@@ -193,7 +197,7 @@ class MoreDraw
 
 		    if (!$renderer)
 		    {
-			    $cached = self::CACHE_DIR . "/{$name}.php";
+			    $cached = $this->p_CACHE_DIR . "/{$name}.php";
 
 			    if (!is_file($cached))
 			    {
@@ -280,7 +284,7 @@ class MoreDraw
      */
     public function getTemplate($name)
     {
-        $raw = self::TEMPLATE_DIR . "/{$name}." . self::TEMPLATE_EXT;
+        $raw = $this->p_TEMPLATE_DIR . "/{$name}." . $this->p_TEMPLATE_EXT;
         if (is_file($raw))
         {
             return file_get_contents($raw);
@@ -322,7 +326,7 @@ HTML;
 
 		$iterator = new RecursiveIteratorIterator
 		(
-			new RecursiveDirectoryIterator(self::TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+			new RecursiveDirectoryIterator($this->p_TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
 			RecursiveIteratorIterator::SELF_FIRST,
 			RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
 		);
@@ -331,8 +335,8 @@ HTML;
 		{
 			if ($dir->isFile())
 			{
-				$name = str_replace(self::TEMPLATE_DIR . '/', '', $path);
-				$name = str_replace('.'.self::TEMPLATE_EXT, '', $name);
+				$name = str_replace($this->p_TEMPLATE_DIR . '/', '', $path);
+				$name = str_replace('.'.$this->p_TEMPLATE_EXT, '', $name);
 				$resultData .= $this->getJSWrapper($name);
 			}
 		}
@@ -370,26 +374,83 @@ HTML;
 	 * each time when application start
 	 * (ex in /local/php_interface/init.php)
 	 *
+	 * @param array $config - can contain :
+	 *                      templates_dir // dir where templates will be located (default vendor/src) - no back slash
+	 *                      cache_dir // where templates cache will be stored (default vendor/src) - no back slash
+	 *                      templates_extension // extension of all templates (default "hbs") - no dot
+	 *
+	 *
+	 * @throws Exception
 	 * @codeCoverageIgnore
 	 */
-	public function init()
+	public function init($config = [])
 	{
-		if (!is_dir(self::TEMPLATE_DIR))
+		if (isset($config['templates_dir']))
 		{
-			if (!mkdir(self::TEMPLATE_DIR))
+			$this->p_TEMPLATE_DIR = $config['templates_dir'];
+		}
+		if (isset($config['cache_dir']))
+		{
+			$this->p_CACHE_DIR = $config['cache_dir'];
+			$this->p_CACHE_MAP_FILE = $config['cache_dir'] . "/map.json";
+		}
+		if (isset($config['templates_extension']))
+		{
+			$this->p_TEMPLATE_EXT = $config['templates_extension'];
+		}
+
+		if (!is_dir($this->p_TEMPLATE_DIR))
+		{
+			if (!mkdir($this->p_TEMPLATE_DIR))
 			{
-				throw new Exception("Can't create template dir for handlebars '".self::TEMPLATE_DIR."'");
+				throw new Exception("Can't create template dir for handlebars '".$this->p_TEMPLATE_DIR."'");
 			};
 		}
-		if (!is_dir(self::CACHE_DIR))
+		if (!is_dir($this->p_CACHE_DIR))
 		{
-			if (!mkdir(self::CACHE_DIR))
+			if (!mkdir($this->p_CACHE_DIR))
 			{
-				throw new Exception("Can't create cache dir for handlebars '".self::CACHE_DIR."'");
+				throw new Exception("Can't create cache dir for handlebars '".$this->p_CACHE_DIR."'");
 			};
 		}
 
 		$this->clearOldCache();
+	}
+
+	/**
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	public function _getTemplateDir()
+	{
+		return $this->p_TEMPLATE_DIR;
+	}
+
+	/**
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	public function _getCacheDir()
+	{
+		return $this->p_CACHE_DIR;
+	}
+
+	/**
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	public function _getCacheMapFile()
+	{
+		return$this->p_CACHE_MAP_FILE;
+	}
+
+	/**
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	public function _getTemplateExtension()
+	{
+		return $this->p_TEMPLATE_EXT;
 	}
 
 	/**
@@ -421,15 +482,15 @@ HTML;
         // last edit version
         $cache = [];
 
-        if (is_file(self::CACHE_MAP_FILE))
+        if (is_file($this->p_CACHE_MAP_FILE))
         {
-            $cache = json_decode(file_get_contents(self::CACHE_MAP_FILE), true);
+            $cache = json_decode(file_get_contents($this->p_CACHE_MAP_FILE), true);
         }
 
         // get current version
 	    $iterator = new RecursiveIteratorIterator
 	    (
-		    new RecursiveDirectoryIterator(self::TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+		    new RecursiveDirectoryIterator($this->p_TEMPLATE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
 		    RecursiveIteratorIterator::SELF_FIRST,
 		    RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
 	    );
@@ -439,7 +500,7 @@ HTML;
 	    {
 		    if ($dir->isFile())
 		    {
-			    $files[] = str_replace(self::TEMPLATE_DIR . '/', '', $path);
+			    $files[] = str_replace($this->p_TEMPLATE_DIR . '/', '', $path);
 		    }
 	    }
 
@@ -455,10 +516,10 @@ HTML;
                     continue;
                 }
 
-                $path_template = self::TEMPLATE_DIR . "/{$f}";
-                $name = str_replace('.'.self::TEMPLATE_EXT, '', $f);
+                $path_template = $this->p_TEMPLATE_DIR . "/{$f}";
+                $name = str_replace('.'.$this->p_TEMPLATE_EXT, '', $f);
 
-                $path_cache = self::CACHE_DIR . "/{$name}.php";
+                $path_cache = $this->p_CACHE_DIR . "/{$name}.php";
 
                 if (file_exists($path_template))
                 {
@@ -485,7 +546,7 @@ HTML;
 	    if ($allowDropCache)
 	    {
 		    $files = new RecursiveIteratorIterator(
-			    new RecursiveDirectoryIterator(self::CACHE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
+			    new RecursiveDirectoryIterator($this->p_CACHE_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
 			    RecursiveIteratorIterator::CHILD_FIRST
 		    );
 
@@ -495,10 +556,10 @@ HTML;
 			    $todo($fileinfo->getRealPath());
 		    }
 
-		    rmdir(self::CACHE_DIR);
+		    rmdir($this->p_CACHE_DIR);
 	    }
 
-        file_put_contents(self::CACHE_MAP_FILE, json_encode($map, JSON_PRETTY_PRINT));
+        file_put_contents($this->p_CACHE_MAP_FILE, json_encode($map, JSON_PRETTY_PRINT));
     }
 }
 
