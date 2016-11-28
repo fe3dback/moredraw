@@ -2,7 +2,7 @@
 
 	use NeoHandlebars\MoreDraw;
 
-	require __DIR__ . './../lib.php';
+	require __DIR__ . './../src/MoreDraw.php';
 
 	class MoreDrawTests extends PHPUnit_Framework_TestCase
 	{
