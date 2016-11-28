@@ -38,4 +38,4 @@ class MoreDraw
     return unless data?
     return data
 
-window.BitrixHandlebars = new BitrixHandlebars()
+window.MoreDraw = new MoreDraw()
