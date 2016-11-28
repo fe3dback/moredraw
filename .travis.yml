@@ -1,0 +1,6 @@
+language: php
+php:
+  - 7
+
+install:
+  - composer install --no-interaction
