@@ -26,5 +26,9 @@
             "email": "fe3dback@yandex.ru"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "require-dev": {
+        "satooshi/php-coveralls": "^1.0",
+        "phpunit/phpcov": "^3.1"
+    }
 }

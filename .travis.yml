@@ -3,4 +3,12 @@ php:
   - 7
 
 install:
-  - composer install --no-interaction
+  - composer install --no-interaction --dev
+
+script:
+  - mkdir -p build/logs
+  - php vendor/bin/phpunit -c phpunit.xml
+  - php vendor/bin/phpcov merge --clover build/logs/clover.xml build/cov
+
+after_success:
+  - travis_retry php vendor/bin/coveralls
