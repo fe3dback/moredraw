@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ahelhot/moredraw.svg?branch=master)](https://travis-ci.org/ahelhot/moredraw)
+[![Coverage Status](https://coveralls.io/repos/github/ahelhot/moredraw/badge.svg?branch=master)](https://coveralls.io/github/ahelhot/moredraw?branch=master)
 
 # MoreDraw
 Smart handlebars template with two-side render (php/js) with just one template and reactive data update.
