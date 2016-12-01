@@ -31,7 +31,7 @@ class MoreDraw
     private $p_TEMPLATE_DIR = self::TEMPLATE_DIR;
     private $p_TEMPLATE_EXT = self::TEMPLATE_EXT;
     private $p_CACHE_DIR = self::CACHE_DIR;
-    private $p_CACHE_MAP_FILE = self::CACHE_DIR . "/map.json";
+    private $p_CACHE_MAP_FILE = __DIR__ . "/map.json";
 
 
     /**
@@ -433,6 +433,17 @@ HTML;
      */
     private function clearOldCache()
     {
+        // test if map in cache folder
+        $mapFile = $this->_getCacheMapFile();
+        $cacheFolder = $this->_getCacheDir();
+
+        if (strpos($mapFile, $cacheFolder) !== false)
+        {
+            throw new Exception("Cache map file can't be placed in cache directory, specify any other place.");
+        }
+
+        // clear
+
         $map = [];
 
         // last edit version
@@ -469,8 +480,6 @@ HTML;
                 $path_template = $this->p_TEMPLATE_DIR . "/{$f}";
                 $name = str_replace('.' . $this->p_TEMPLATE_EXT, '', $f);
 
-                $path_cache = $this->p_CACHE_DIR . "/{$name}.php";
-
                 if (file_exists($path_template)) {
                     clearstatcache(true, $path_template);
                     $lastEdit = filemtime($path_template);
@@ -479,8 +488,6 @@ HTML;
                     if (isset($cache[$name])) {
                         $cacheEdit = $cache[$name];
                         if ($cacheEdit < $lastEdit) {
-                            // remove old cache files
-                            unlink($path_cache);
                             $allowDropCache = true;
                         }
                     }
@@ -507,7 +514,3 @@ HTML;
         file_put_contents($this->p_CACHE_MAP_FILE, json_encode($map, JSON_PRETTY_PRINT));
     }
 }
-
-
-
-
