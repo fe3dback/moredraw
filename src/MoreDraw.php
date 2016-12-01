@@ -337,10 +337,14 @@ HTML;
      * each time when application start
      * (ex in /local/php_interface/init.php)
      *
-     * @param array $config - can contain :
-     *                      templates_dir // dir where templates will be located (default vendor/src) - no back slash
-     *                      cache_dir // where templates cache will be stored (default vendor/src) - no back slash
-     *                      templates_extension // extension of all templates (default "hbs") - no dot
+     * @param array $config - can contain:
+     *
+     * @param templates_dir         //dir where templates will be located (default vendor/src/templates) - no back slash
+     * @param cache_dir             //where templates cache will be stored (default vendor/src/cache) - no back slash
+     * @param cache_map_dir         //where cache map file will be stored (default vendor/src) - no back slash
+     *                              //cache_map_dir can't be same as cache_dir !
+     * @param templates_extension   //extension of all templates (default "hbs") - no dot
+     *
      *
      *
      * @throws Exception
@@ -353,7 +357,9 @@ HTML;
         }
         if (isset($config['cache_dir'])) {
             $this->p_CACHE_DIR = $config['cache_dir'];
-            $this->p_CACHE_MAP_FILE = $config['cache_dir'] . "/map.json";
+        }
+        if (isset($config['cache_map_dir'])) {
+            $this->p_CACHE_MAP_FILE = $config['cache_map_dir'] . "/map.json";
         }
         if (isset($config['templates_extension'])) {
             $this->p_TEMPLATE_EXT = $config['templates_extension'];
@@ -367,6 +373,11 @@ HTML;
         if (!is_dir($this->p_CACHE_DIR)) {
             if (!mkdir($this->p_CACHE_DIR)) {
                 throw new Exception("Can't create cache dir for handlebars '" . $this->p_CACHE_DIR . "'");
+            };
+        }
+        if (!is_dir(dirname($this->p_CACHE_MAP_FILE))) {
+            if (!mkdir(dirname($this->p_CACHE_MAP_FILE))) {
+                throw new Exception("Can't create cache dir for map file '" . $this->p_CACHE_MAP_FILE . "'");
             };
         }
 
