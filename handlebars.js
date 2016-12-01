@@ -49,6 +49,13 @@
       return data;
     };
 
+    MoreDraw.prototype.setData = function(name, index, data) {
+      if (this.dataCache == null) {
+        return;
+      }
+      return this.dataCache[name][index] = data;
+    };
+
     return MoreDraw;
 
   })();

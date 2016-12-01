@@ -38,4 +38,9 @@ class MoreDraw
     return unless data?
     return data
 
+  setData: (name, index, data) ->
+
+    return unless @dataCache?
+    @dataCache[name][index] = data
+
 window.MoreDraw = new MoreDraw()
