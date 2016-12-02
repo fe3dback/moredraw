@@ -15,7 +15,7 @@ Based on zordius/lightncandy && handlebars parser
 install deps:
 ```
 $ cd /your-project/
-$ composer require ahelhot/moredraw
+$ composer require fe3dback/moredraw
 ```
 in project init (config, etc..) (before we use template render)
 
