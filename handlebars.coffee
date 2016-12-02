@@ -20,7 +20,7 @@ class MoreDraw
 
   render: (name, data) ->
 
-    name = name.replace('/', "__")
+    name = name.split('/').join('__')
 
     $el = $("#hb-#{name}");
     return "" unless $el?

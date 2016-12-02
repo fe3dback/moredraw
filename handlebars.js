@@ -26,7 +26,7 @@
 
     MoreDraw.prototype.render = function(name, data) {
       var $el, tpl;
-      name = name.replace('/', "__");
+      name = name.split('/').join('__');
       $el = $("#hb-" + name);
       if ($el == null) {
         return "";
