@@ -1,10 +1,10 @@
 {
-    "name": "ahelhot/moredraw",
+    "name": "fe3dback/moredraw",
     "description": "Handlebars two-side wrapper (js/php) - Same template anywhere with reactive update",
     "repositories": [
       {
         "type": "git",
-        "url": "https://github.com/ahelhot/moredraw"
+        "url": "https://github.com/fe3dback/moredraw"
       }
     ],
     "keywords": ["handlebars", "PHP", "template", "logicless", "JS"],
