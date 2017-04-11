@@ -198,7 +198,7 @@ class MoreDraw
                     try {
                         $phpize = LightnCandy::compile($template, $compileSettings);
                     } catch (Exception $e) {
-                        throw new Exception("Can't render handlebars template. Internal Error");
+                        throw new Exception("Can't render handlebars template. Internal Error: ".$e->getMessage());
                     }
 
                     $status = file_put_contents($cached, "<?php \n" . $phpize . "\n?>");
@@ -222,7 +222,7 @@ class MoreDraw
                 $phpize = LightnCandy::compile($template, $compileSettings);
                 $renderer = eval($phpize);
             } catch (Exception $e) {
-                throw new Exception("Can't render handlebars template. Internal Error");
+                throw new Exception("Can't render handlebars template. Internal Error: ".$e->getMessage());
             }
             // @codeCoverageIgnoreEnd
         }
@@ -304,7 +304,7 @@ HTML;
             }
         }
 
-        $templatesData = json_encode($this->getTemplateDataCache(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $templatesData = json_encode($this->getTemplateDataCache());
         $partialsData = json_encode($this->getPartials());
 
         $resultData .= <<<HTML
@@ -522,6 +522,6 @@ HTML;
             rmdir($this->p_CACHE_DIR);
         }
 
-        file_put_contents($this->p_CACHE_MAP_FILE, json_encode($map, JSON_PRETTY_PRINT));
+        file_put_contents($this->p_CACHE_MAP_FILE, json_encode($map));
     }
 }
