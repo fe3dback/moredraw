@@ -1,3 +1,7 @@
+# DEPRECATED
+Please see v2 instead:
+https://github.com/fe3dback/kx-draw
+
 [![Build Status](https://travis-ci.org/fe3dback/moredraw.svg?branch=master)](https://travis-ci.org/fe3dback/moredraw)
 [![Coverage Status](https://coveralls.io/repos/github/fe3dback/moredraw/badge.svg?branch=master)](https://coveralls.io/github/fe3dback/moredraw?branch=master)
 
